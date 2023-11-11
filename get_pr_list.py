@@ -1,28 +1,36 @@
-
 import requests
+from requests.auth import HTTPBasicAuth
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 import xlwt
 from xlwt import Workbook
 
+
 def get_pr_list():
-    # Define your repository and credentials
-    from requests.auth import HTTPBasicAuth
+    load_dotenv('bitBucket.env')
+    # username = os.getenv('USERNAME')  ## for some reason failing to load username from .env
+    username = 'Tzvika_Lifshitz'
+    password = os.getenv('PASSWORD')
 
     # Define your Bitbucket project and credentials
-    project_key = 'projects/GEN2'
-    username = 'Tzvika_Lifshitz'
-    password = 'YkXKS8yPFzaMb9KddQ2v'
-    repo_slug = 'https://bitbucket.org/softimize/gen2-plugin-lib'
-    workspace_id = "https://bitbucket.org/softimize/workspace"
     project_key = "GEN2"
-    # Define your date range
-    start_date = datetime(2023, 8, 1).timestamp()
-    end_date = datetime(2023, 12, 31).timestamp()
 
-    repo_slugs = []
+    repo_slugs = get_repo_slugs(username, password)
+
+    pull_requests_in_date_range = get_pull_requests(repo_slugs, username, password)
+
+    ob = Workbook()
+    ws = ob.add_sheet('Merged PRs', True)
+
+    generate_report(pull_requests_in_date_range, ws)
+    ob.save('Merged-PR-report.xls')
+
+
+def get_repo_slugs(username, password):
     url = "https://api.bitbucket.org/2.0/repositories/softimize?q=project.key%3D%22GEN2%22"
-
-    while (url != None):  #handle pagination by checking of there is a next page
+    repo_slugs = []
+    while url is not None:  # handle pagination by checking of there is a next page
         # Define the API URL to get all repos
         # Send a GET request to the Bitbucket API
         response = requests.get(url, auth=HTTPBasicAuth(username, password))
@@ -35,34 +43,34 @@ def get_pr_list():
 
         for value in data['values']:
             repo_slugs.append(value['name'])
+    return repo_slugs
 
+
+def get_pull_requests(repo_slugs, username, password):
+    # Define your date range
+    start_date = datetime(2023, 8, 1).timestamp()
+    end_date = datetime(2023, 12, 31).timestamp()
     pull_requests_in_date_range = []
     for repo in repo_slugs:
-        url = f"https://api.bitbucket.org/2.0/repositories/softimize/"+repo+"/pullrequests?state=MERGED"
-        while (url != None):
-             response = requests.get(url, auth=(username, password))
+        url = f"https://api.bitbucket.org/2.0/repositories/softimize/" + repo + "/pullrequests?state=MERGED"
+        while url is not None:
+            response = requests.get(url, auth=(username, password))
+            data = response.json()
 
-             data = response.json()
+            if 'next' in data:
+                url = data['next']
+            else:
+                url = None
 
-             if 'next' in data:
-                 url = data['next']
-             else:
-                 url = None
-
-             # Filter the pull requests by date
-
-             if 'values' in data:
-                 paginated_pull_requests_in_date_range = [
-                 pr for pr in data['values']
-                 if start_date <= datetime.strptime(pr['created_on'], '%Y-%m-%dT%H:%M:%S.%f%z').timestamp() <= end_date
-                 ]
-                 pull_requests_in_date_range.extend(paginated_pull_requests_in_date_range)
-
-    ob = Workbook()
-    ws = ob.add_sheet('Merged PRs', True)
-    generate_report(pull_requests_in_date_range, ws)
-
-    ob.save('Merged-PR-report.xls')
+            # Filter the pull requests by date
+            if 'values' in data:
+                paginated_pull_requests_in_date_range = [
+                    pr for pr in data['values']
+                    if
+                    start_date <= datetime.strptime(pr['created_on'], '%Y-%m-%dT%H:%M:%S.%f%z').timestamp() <= end_date
+                ]
+                pull_requests_in_date_range.extend(paginated_pull_requests_in_date_range)
+    return pull_requests_in_date_range
 
 
 def generate_report(pr_list, ws):
@@ -94,6 +102,7 @@ def generate_report(pr_list, ws):
             ws.write(row, 3, repo, style)
 
             row = row + 1
+
 
 if __name__ == '__main__':
     get_pr_list()
