@@ -1,3 +1,5 @@
+import argparse
+
 import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
@@ -9,13 +11,14 @@ from xlwt import Workbook
 
 
 def get_pr_list():
+    args = get_arguments()    #command line: -projectName <name of bitbucket project> for example "GEN2"
     load_dotenv('bitBucket.env')
     # username = os.getenv('USERNAME')  ## for some reason failing to load username from .env
     username = 'Tzvika_Lifshitz'
     password = os.getenv('PASSWORD')
 
     start = time.perf_counter()
-    repo_slugs = get_repo_slugs(username, password)
+    repo_slugs = get_repo_slugs(username, password, args.project_name)
     finish_get_repos = time.perf_counter()
     print(f'Finished get repos in {round(finish_get_repos - start, 2)} seconds')
 
@@ -30,13 +33,14 @@ def get_pr_list():
     ws = ob.add_sheet('Merged PRs', True)
 
     generate_report(pull_requests_in_date_range, ws)
-    ob.save('Merged-PR-report.xls')
+    ob.save(args.project_name+'-Merged-PR-report.xls')
 
 
-def get_repo_slugs(username, password):
+def get_repo_slugs(username, password, project_name):
     page = 1
     # Define the API URL to get all repos
-    url = "https://api.bitbucket.org/2.0/repositories/softimize?q=project.key%3D%22GEN2%22"
+    url = "https://api.bitbucket.org/2.0/repositories/softimize?q=project.key%3D%22"+project_name+"%22"
+    #url = "https://api.bitbucket.org/2.0/repositories/softimize?q=project.key%3D%22GEN2%22"
     repo_slugs = []
     while url is not None:  # handle pagination by checking of there is a next page
         response = requests.get(url, auth=HTTPBasicAuth(username, password))
@@ -110,6 +114,10 @@ def generate_report(pr_list, ws):
 
             row = row + 1
 
+def get_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-projectName', dest="project_name", action="store", required=True, help='name of bitBucket project')
 
+    return parser.parse_args()
 if __name__ == '__main__':
     get_pr_list()
