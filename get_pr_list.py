@@ -15,8 +15,7 @@ from xlwt import Workbook
 def get_pr_list():
     args = get_arguments()  # command line: -projectName <name of bitbucket project> for example "GEN2"
     load_dotenv('bitBucket.env')
-    # username = os.getenv('USERNAME')  ## for some reason failing to load username from .env
-    username = 'Tzvika_Lifshitz'
+    username = os.getenv('USERNAME1')  ## for some reason failing to load username with the key USENAME from .env
     password = os.getenv('PASSWORD')
 
     start = time.perf_counter()

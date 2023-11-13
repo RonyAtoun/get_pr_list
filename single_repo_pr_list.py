@@ -15,8 +15,7 @@ from xlwt import Workbook
 def single_repo_pr_list():
     args = get_arguments()  # command line: -repoName <name of bitbucket project>
     load_dotenv('bitBucket.env')
-    # username = os.getenv('USERNAME')  ## for some reason failing to load username from .env
-    username = 'Tzvika_Lifshitz'
+    username = os.getenv('USERNAME1')  ## for some reason failing to load username with the key USENAME from .env
     password = os.getenv('PASSWORD')
 
     url = f"https://api.bitbucket.org/2.0/repositories/softimize/" + args.repo_name + "/pullrequests?state=MERGED"
