@@ -64,7 +64,7 @@ def get_repo_slugs(username, password, project_name):
             url = None
 
         for value in data['values']:
-            repo_slugs.append(value['name'])
+            repo_slugs.append(value['slug'])
     return repo_slugs
 
 
@@ -107,24 +107,27 @@ def generate_report(pr_list, ws):
 
     row = 0
     ws.write(row, 0, "Title", bold_style_head)
-    ws.write(row, 1, "Date created", bold_style_head)
-    ws.write(row, 2, "Merge Destination", bold_style_head)
-    ws.write(row, 3, "Repository", bold_style_head)
+    ws.write(row, 1, "Link", bold_style_head)
+    ws.write(row, 2, "Date created", bold_style_head)
+    ws.write(row, 3, "Merge Destination", bold_style_head)
+    ws.write(row, 4, "Repository", bold_style_head)
 
     row = row + 1
     for repo in pr_list:
         for value in repo:
             if len(value) != 0:
                 title = value['title']
+                link = value['merge_commit']['links']['html']['href']
                 created_on = value['created_on'].split("T")[0]
                 merge_dest = value['destination']['branch']['name']
                 repo = value['destination']['repository']['name']
                 style = reg_style
 
                 ws.write(row, 0, title, bold_style)
-                ws.write(row, 1, created_on, style)
-                ws.write(row, 2, merge_dest, style)
-                ws.write(row, 3, repo, style)
+                ws.write(row, 1, link, bold_style)
+                ws.write(row, 2, created_on, style)
+                ws.write(row, 3, merge_dest, style)
+                ws.write(row, 4, repo, style)
 
                 row = row + 1
 
